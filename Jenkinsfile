@@ -3,6 +3,10 @@ pipeline {
     options {
         skipDefaultCheckout(true)
     }
+    environment {
+        TFSEC_DOCKER_CMD = 'docker'
+        TERRAFORM_CMD = 'terraform'
+    }
     stages {
         stage('clean workspace') {
             steps {
@@ -14,20 +18,19 @@ pipeline {
                 checkout scm
             }
         }
-    stage('tfsec') {
-      steps {
-        sh ' /usr/local/bin/docker run --rm -v "$(pwd):/src" aquasec/tfsec .'
-      }
-    }
-    stage('Approval for Terraform') {
+        stage('tfsec') {
+            steps {
+                bat(script: '"${env.TFSEC_DOCKER_CMD}" run --rm -v "%WORKSPACE%:/src" aquasec/tfsec .')
+            }
+        }
+        stage('Approval for Terraform') {
             steps {
                 input(message: 'Approval required before Terraform', ok: 'Proceed', submitterParameter: 'APPROVER')
             }
         }
-
         stage('terraform') {
             steps {
-                sh '/opt/homebrew/bin/terraform apply -auto-approve -no-color'
+                bat(script: '"${env.TERRAFORM_CMD}" apply -auto-approve -no-color')
             }
         }
     }
@@ -37,3 +40,4 @@ pipeline {
         }
     }
 }
+
